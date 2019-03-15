@@ -78,6 +78,10 @@ public class Constants {
 
     public static final String ES_AVRO_SCHEMA_FILE = "es.serializer.avro.schema.file";
 
+    public static final String ES_NGINX_LOG_FIELDS = "es.serializer.nginx.fields";
+
+    public static final String ES_NGINX_LOG_REGEX = "es.serializer.nginx.regex";
+
     /**
      * This enum is used for the time unit
      * <p>
@@ -137,8 +141,10 @@ public class Constants {
     public enum FieldTypeEnum {
         STRING("string"),
         INT("int"),
+        LONG("long"),
         FLOAT("float"),
-        BOOLEAN("boolean");
+        BOOLEAN("boolean"),
+        DATETIME("date");
 
         private String fieldType;
 

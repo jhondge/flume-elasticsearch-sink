@@ -68,7 +68,7 @@ public class Util {
     public static ByteSizeValue getByteSizeValue(Integer byteSize, String unit) {
         ByteSizeValue byteSizeValue = new ByteSizeValue(DEFAULT_ES_BULK_SIZE, ByteSizeUnit.MB);
         logger.trace("Byte size value is [{}] ", byteSizeValue);
-        if (byteSize != null) {
+        if (byteSize != null && unit != null) {
             ByteSizeEnum byteSizeEnum = ByteSizeEnum.valueOf(unit.toUpperCase());
             switch (byteSizeEnum) {
                 case MB:
@@ -111,9 +111,16 @@ public class Util {
                 case INT:
                     xContentBuilder.field(key, Integer.parseInt(value));
                     break;
+                case LONG:
+                    xContentBuilder.field(key, Long.parseLong(value));
+                    break;
                 case BOOLEAN:
                     xContentBuilder.field(key, Boolean.valueOf(value));
                     break;
+                case DATETIME:
+//                    xContentBuilder.field(key, Date)
+                    break;
+
                 default:
                     logger.error("Type is incorrect, please check type: " + type);
             }
