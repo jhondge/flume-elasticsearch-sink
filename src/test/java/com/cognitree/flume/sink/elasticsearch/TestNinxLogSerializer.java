@@ -28,10 +28,11 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
-import static com.cognitree.flume.sink.elasticsearch.Constants.ES_CSV_FIELDS;
-import static com.cognitree.flume.sink.elasticsearch.Constants.ES_NGINX_LOG_FIELDS;
-import static com.cognitree.flume.sink.elasticsearch.Constants.ES_NGINX_LOG_REGEX;
+import static com.cognitree.flume.sink.elasticsearch.Constants.*;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import static org.junit.Assert.assertEquals;
 
@@ -52,7 +53,7 @@ public class TestNinxLogSerializer {
     @Test
     public void testSerializer() throws Exception {
         Context context = new Context();
-        String type = "remote_addr:string,remote_user:string,datetime:string,http_method:string,uri:string,request_body:string,status:int,body_length:long,http_referer:string,user_agent:string,http_x_forwarded_for:string,upstream_addr:string,upstream_response_time:string,request_time:string";
+        String type = "remote_addr:string,remote_user:string,datetime:date,http_method:string,uri:string,request_body:string,status:int,body_length:long,http_referer:string,user_agent:string,http_x_forwarded_for:string,upstream_addr:string,upstream_response_time:float,request_time:float";
 //        String regex = "([^\\\\s]*)\\\\s-\\\\s([^\\\\s]*)\\\\s\\\\[(.*)\\\\]\\\\s+\\\\\"([\\\\S]*)\\\\s+([\\\\S]*)\\\\s+[\\\\S]*\\\\\"\\\\s+\\\\\"([^\\\\\"]*)\\\\\"\\\\s+(\\\\d+)\\\\s+(\\\\d+)\\\\s+\\\\\"([^\\\\\"]*)\\\\\"\\\\s+\\\\\"([^\\\\\"]*)\\\\\"\\\\s+\\\\\"([^\\\\\"]*)\\\\\"\\\\s+([^\\\\s]*)\\\\s+([^\\\\s]*)\\\\s+([^\\\\]*)";
         String regex = "([^\\\\s]*)\\\\s-\\\\s([^\\\\s]*)\\\\s\\\\[(.*)\\\\]\\\\s+\\\\\"([\\\\S]*)\\\\s+([\\\\S]*)\\\\s+[\\\\S]*\\\\\"\\\\s+\\\\\"([^\\\\\"]*)\\\\\"\\\\s+(\\\\d+)\\\\s+(\\\\d+)\\\\s+\\\\\"([^\\\\\"]*)\\\\\"\\\\s+\\\\\"([^\\\\\"]*)\\\\\"\\\\s+\\\\\"([^\\\\\"]*)\\\\\"\\\\s+([^\\\\s]*)\\\\s+([^\\\\s]*)\\\\s+([^\\\\]*)";
 
@@ -65,11 +66,14 @@ public class TestNinxLogSerializer {
         message = "{\"log\":\"172.16.0.97 - - [15/Mar/2019:10:00:23 +0000] \\\"GET /api/posts/follows-by-createTime?createTime=-1&pageSize=12&country=CN&appVersion=0.9.2&osVersion=27&timezone=Asia%2FShanghai&appName=%E5%83%8F%E7%B4%A0%E8%9C%9C%E8%9C%82&language=zh&deviceName=OPPO%20R11&platform=1&timestamp=1552835567528&signature=a4a8797e763589ef48d084caca1f0bf3 HTTP/1.1\\\" \\\"-\\\" 200 393 \\\"-\\\" \\\"kube-probe/1.9+\\\" \\\"-\\\" - - 0.000\\n\",\"stream\":\"stdout\",\"time\":\"2019-03-15T10:00:23.680580284Z\"}";
 
 //        message = "[2016-01-08T15:33:55+08:00]";
+
+        String dateformat = "dd/MMM/yyy:HH:mm:ss Z";
 //
 //        regex = "\\\\[(.*)\\\\]";
 
         context.put(ES_NGINX_LOG_FIELDS, type);
         context.put(ES_NGINX_LOG_REGEX, regex);
+        context.put(ES_NGINX_LOG_DATEFORMAT, dateformat);
 
         nginxSerializer.configure(context);
 
@@ -80,11 +84,13 @@ public class TestNinxLogSerializer {
         assertEquals(parser.parse(Strings.toString(expected)), parser.parse(Strings.toString(actual)));
     }
 
-    private XContentBuilder generateContentBuilder() throws IOException {
+    private XContentBuilder generateContentBuilder() throws IOException, ParseException {
         XContentBuilder expected = jsonBuilder().startObject();
         expected.field("remote_addr", "172.16.0.97");
         expected.field("remote_user", "-");
-        expected.field("datetime", "15/Mar/2019:10:00:23 +0000");
+
+        Date date = new SimpleDateFormat("dd/MMM/yyy:HH:mm:ss Z").parse("15/Mar/2019:10:00:23 +0000");
+        expected.field("datetime", date);
         expected.field("http_method", "GET");
         expected.field("uri", "/api/posts/follows-by-createTime");
         expected.field("uri_params", "createTime=-1&pageSize=12&country=CN&appVersion=0.9.2&osVersion=27&timezone=Asia%2FShanghai&appName=%E5%83%8F%E7%B4%A0%E8%9C%9C%E8%9C%82&language=zh&deviceName=OPPO%20R11&platform=1&timestamp=1552835567528&signature=a4a8797e763589ef48d084caca1f0bf3");
@@ -95,8 +101,8 @@ public class TestNinxLogSerializer {
         expected.field("user_agent", "kube-probe/1.9+");
         expected.field("http_x_forwarded_for", "-");
         expected.field("upstream_addr", "-");
-        expected.field("upstream_response_time", "-");
-        expected.field("request_time", "0.000");
+        expected.field("upstream_response_time", 0);
+        expected.field("request_time", 0);
         expected.endObject();
         return expected;
     }

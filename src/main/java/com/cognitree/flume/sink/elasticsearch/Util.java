@@ -25,6 +25,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import static com.cognitree.flume.sink.elasticsearch.Constants.*;
 
@@ -95,10 +98,14 @@ public class Util {
         return contextValue;
     }
 
+    public static void addField(XContentBuilder xContentBuilder, String key, String value, String type) throws IOException{
+        addField(xContentBuilder, key, value, type, null);
+    }
+
     /**
      * Add csv field to the XContentBuilder
      */
-    public static void addField(XContentBuilder xContentBuilder, String key, String value, String type) throws IOException {
+    public static void addField(XContentBuilder xContentBuilder, String key, String value, String type, SimpleDateFormat dateFormat) throws IOException {
         if (type != null) {
             FieldTypeEnum fieldTypeEnum = FieldTypeEnum.valueOf(type.toUpperCase());
             switch (fieldTypeEnum) {
@@ -135,8 +142,16 @@ public class Util {
                 case BOOLEAN:
                     xContentBuilder.field(key, Boolean.valueOf(value));
                     break;
-                case DATETIME:
-//                    xContentBuilder.field(key, Date)
+                case DATE:
+                    Date date = null;
+                    if(dateFormat != null) {
+                        try {
+                            date = dateFormat.parse(value);
+                        } catch (ParseException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    xContentBuilder.field(key, date);
                     break;
 
                 default:

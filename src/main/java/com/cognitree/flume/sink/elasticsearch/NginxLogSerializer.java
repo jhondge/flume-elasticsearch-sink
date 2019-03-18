@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -36,6 +37,8 @@ public class NginxLogSerializer implements Serializer {
     private final List<String> types = new ArrayList<String>();
 
     private Pattern regex;
+
+    private SimpleDateFormat dateFormatter;
 
     @Override
     public XContentBuilder serialize(Event event) {
@@ -68,10 +71,10 @@ public class NginxLogSerializer implements Serializer {
                         String[] values =  value.split("\\?");
                         value = values[0];
                         if(values.length > 0){
-                            Util.addField(xContentBuilder, key + "_params", values[1], "string");
+                            Util.addField(xContentBuilder, key + "_params", values[1], "string", dateFormatter);
                         }
                     }
-                    Util.addField(xContentBuilder, key, value, types.get(group));
+                    Util.addField(xContentBuilder, key, value, types.get(group), dateFormatter);
                 }
                 xContentBuilder.endObject();
             }
@@ -94,6 +97,12 @@ public class NginxLogSerializer implements Serializer {
         regex = Pattern.compile(regexString);
         regex.pattern();
         regex.matcher("").groupCount();
+
+        String dateFormat = context.getString(ES_NGINX_LOG_DATEFORMAT);
+        if(dateFormat != null && dateFormat.length() > 0) {
+            dateFormatter = new SimpleDateFormat(dateFormat);
+        }
+
         try {
 //            delimiter = context.getString(ES_CSV_DELIMITER, DEFAULT_ES_CSV_DELIMITER);
             String[] fieldTypes = fields.split(COMMA);

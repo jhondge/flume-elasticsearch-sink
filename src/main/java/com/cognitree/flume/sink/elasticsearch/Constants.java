@@ -82,6 +82,8 @@ public class Constants {
 
     public static final String ES_NGINX_LOG_REGEX = "es.serializer.nginx.regex";
 
+    public static final String ES_NGINX_LOG_DATEFORMAT = "es.serializer.nginx.dateformat";
+
     /**
      * This enum is used for the time unit
      * <p>
@@ -144,7 +146,7 @@ public class Constants {
         LONG("long"),
         FLOAT("float"),
         BOOLEAN("boolean"),
-        DATETIME("date");
+        DATE("date");
 
         private String fieldType;
 
