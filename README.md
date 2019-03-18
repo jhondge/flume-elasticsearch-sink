@@ -45,6 +45,7 @@ Required properties are in bold.
 | es.serializer.avro.schema.file             | -              | Absolute path for the schema configuration file |
 | es.serializer.nginx.fields                 | -              | Comma separated nginx logs field name with data type i.e. column1:type1,column2:type2, Supported data types are string, boolean, int, float, long |
 | es.serializer.nginx.regex                  | -              | The regex extractor for the ngxin log format |
+
 Example of agent named agent
 
 ````
