@@ -62,7 +62,16 @@ public class NginxLogSerializer implements Serializer {
                         break;
                     }
                     String value = matcher.group(groupIndex);
-                    Util.addField(xContentBuilder, names.get(group), value, types.get(group));
+                    //uri 单独处理，需要将get的?号进行拆分uri和参数，后续如果需要可以做成插件形式
+                    String key =  names.get(group);
+                    if("uri".equalsIgnoreCase(key) && value != null && value.length() > 0 && value.contains("?")) {
+                        String[] values =  value.split("\\?");
+                        value = values[0];
+                        if(values.length > 0){
+                            Util.addField(xContentBuilder, key + "_params", values[1], "string");
+                        }
+                    }
+                    Util.addField(xContentBuilder, key, value, types.get(group));
                 }
                 xContentBuilder.endObject();
             }

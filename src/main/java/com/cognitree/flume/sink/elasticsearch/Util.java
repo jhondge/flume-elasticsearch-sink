@@ -106,13 +106,31 @@ public class Util {
                     xContentBuilder.field(key, value);
                     break;
                 case FLOAT:
-                    xContentBuilder.field(key, Float.valueOf(value));
+                    float fvalue = 0.00f;
+                    try{
+                        fvalue = Float.valueOf(value);
+                    } catch (NumberFormatException e){
+                        logger.error("parse float value error, key[{}], value[{}]", new Object[]{key, value});
+                    }
+                    xContentBuilder.field(key, fvalue);
                     break;
                 case INT:
-                    xContentBuilder.field(key, Integer.parseInt(value));
+                    float ivalue = 0;
+                    try{
+                        ivalue = Integer.valueOf(value);
+                    } catch (NumberFormatException e){
+                        logger.error("parse integer value error, key[{}], value[{}]", new Object[]{key, value});
+                    }
+                    xContentBuilder.field(key, ivalue);
                     break;
                 case LONG:
-                    xContentBuilder.field(key, Long.parseLong(value));
+                    float lvalue = 0;
+                    try{
+                        lvalue = Long.parseLong(value);
+                    } catch (NumberFormatException e){
+                        logger.error("parse long value error, key[{}], value[{}]", new Object[]{key, value});
+                    }
+                    xContentBuilder.field(key, lvalue);
                     break;
                 case BOOLEAN:
                     xContentBuilder.field(key, Boolean.valueOf(value));
