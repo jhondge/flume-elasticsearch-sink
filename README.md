@@ -18,6 +18,8 @@ Follow these steps to use this sink in Apache flume:
 
 * Configure the sink in the flume configuration file with properties as below
 
+* Support Nginx logs to Elasticsearch out-of-box
+
 Required properties are in bold.
 
 | Property Name                              | Default | Description                                                                                   |
@@ -41,7 +43,8 @@ Required properties are in bold.
 | es.serializer.csv.fields                   | -              | Comma separated csv field name with data type i.e. column1:type1,column2:type2, Supported data types are string, boolean, int and float |
 | es.serializer.csv.delimiter                | ,(comma)       | Delimiter for the data in flume event body|
 | es.serializer.avro.schema.file             | -              | Absolute path for the schema configuration file |
-
+| es.serializer.nginx.fields                 | -              | Comma separated nginx logs field name with data type i.e. column1:type1,column2:type2, Supported data types are string, boolean, int, float, long |
+| es.serializer.nginx.regex                  | -              | The regex extractor for the ngxin log format |
 Example of agent named agent
 
 ````
