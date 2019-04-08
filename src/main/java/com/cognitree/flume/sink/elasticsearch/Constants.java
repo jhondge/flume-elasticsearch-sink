@@ -82,6 +82,11 @@ public class Constants {
 
     public static final String ES_NGINX_LOG_REGEX = "es.serializer.nginx.regex";
 
+    public static final String ES_NGINX_LOG_FIELD_ERROR = "es.serializer.nginx.field_error";
+
+    public static final String DEFAULT_LOG_FILED_ERROR = "_error_msg";
+
+
     public static final String ES_NGINX_LOG_DATEFORMAT = "es.serializer.nginx.dateformat";
 
     /**

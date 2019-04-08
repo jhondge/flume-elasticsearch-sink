@@ -32,13 +32,15 @@ public class NginxLogSerializer implements Serializer {
 
     private static final Logger logger = LoggerFactory.getLogger(NginxLogSerializer.class);
 
-    private final List<String> names = new ArrayList<String>();
+    protected final List<String> names = new ArrayList<String>();
 
-    private final List<String> types = new ArrayList<String>();
+    protected final List<String> types = new ArrayList<String>();
 
-    private Pattern regex;
+    protected String filedError;
 
-    private SimpleDateFormat dateFormatter;
+    protected Pattern regex;
+
+    protected SimpleDateFormat dateFormatter;
 
     @Override
     public XContentBuilder serialize(Event event) {
@@ -77,9 +79,20 @@ public class NginxLogSerializer implements Serializer {
                     Util.addField(xContentBuilder, key, value, types.get(group), dateFormatter);
                 }
                 xContentBuilder.endObject();
+            } else {
+                xContentBuilder = jsonBuilder().startObject();
+                Util.addField(xContentBuilder, filedError, logStr, "string");
+                xContentBuilder.endObject();
             }
 
         } catch (Exception e) {
+            try {
+                xContentBuilder = jsonBuilder().startObject();
+                Util.addField(xContentBuilder, filedError +"_exception", body + "|" + e.toString(), "string");
+                xContentBuilder.endObject();
+            } catch (Exception e1) {
+                e1.printStackTrace();
+            }
             logger.error("Error in converting the body to the json format " + e.getMessage(), e);
         }
         return xContentBuilder;
@@ -113,6 +126,8 @@ public class NginxLogSerializer implements Serializer {
         } catch (Exception e) {
             Throwables.propagate(e);
         }
+
+        filedError = context.getString(ES_NGINX_LOG_FIELD_ERROR, DEFAULT_LOG_FILED_ERROR);
     }
 
     /**

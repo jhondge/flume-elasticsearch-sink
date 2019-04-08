@@ -70,7 +70,6 @@ public class TestNinxLogSerializer {
         String dateformat = "dd/MMM/yyy:HH:mm:ss Z";
 //
 //        regex = "\\\\[(.*)\\\\]";
-
         context.put(ES_NGINX_LOG_FIELDS, type);
         context.put(ES_NGINX_LOG_REGEX, regex);
         context.put(ES_NGINX_LOG_DATEFORMAT, dateformat);

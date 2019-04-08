@@ -37,21 +37,23 @@ public class NginxIndexBuilder extends StaticIndexBuilder{
 
     @Override
     public String getIndex(Event event) {
-        Matcher indexMatcher = this.variableRegex.matcher(this.index);
+        if(this.variableRegex != null && this.index != null){
+            Matcher indexMatcher = this.variableRegex.matcher(this.index);
 
-        while (indexMatcher.find() && event.getHeaders() != null ){
-            Map<String, String> headers = event.getHeaders();
-            for (int group = 0, count = indexMatcher.groupCount(); group < count; group++) {
-                int groupIndex = group + 1;
-                if (groupIndex > count) {
-                    break;
+            while (indexMatcher.find() && event.getHeaders() != null) {
+                Map<String, String> headers = event.getHeaders();
+                for (int group = 0, count = indexMatcher.groupCount(); group < count; group++) {
+                    int groupIndex = group + 1;
+                    if (groupIndex > count) {
+                        break;
+                    }
+                    String variable = indexMatcher.group(groupIndex);
+                    String value = headers.get(variable);
+                    String regex = "\\$\\{" + variable + "\\}";
+                    Pattern pattern = Pattern.compile(regex);
+                    Matcher matcher = pattern.matcher(this.index);
+                    this.index = matcher.replaceAll(value);
                 }
-                String variable = indexMatcher.group(groupIndex);
-                String value = headers.get(variable);
-                String regex = "\\$\\{" + variable+ "\\}";
-                Pattern pattern = Pattern.compile(regex);
-                Matcher matcher = pattern.matcher(this.index);
-                this.index = matcher.replaceAll(value);
             }
         }
         return super.getIndex(event);
