@@ -20,6 +20,9 @@ import com.cognitree.flume.sink.elasticsearch.client.ElasticsearchClientBuilder;
 import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.flume.Channel;
@@ -27,9 +30,11 @@ import org.apache.flume.Context;
 import org.apache.flume.Event;
 import org.apache.flume.Transaction;
 import org.apache.flume.conf.Configurable;
+import org.apache.flume.event.SimpleEvent;
 import org.apache.flume.sink.AbstractSink;
 import org.elasticsearch.action.bulk.BulkProcessor;
 import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
@@ -41,6 +46,8 @@ import java.io.IOException;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.cognitree.flume.sink.elasticsearch.Constants.*;
 
@@ -70,6 +77,10 @@ public class ElasticSearchSink extends AbstractSink implements Configurable {
         return client;
     }
 
+    protected Pattern eventPrefixRegex;
+
+    private Event previousEvent;
+
     @Override
     public void configure(Context context) {
         String[] hosts = getHosts(context);
@@ -82,6 +93,11 @@ public class ElasticSearchSink extends AbstractSink implements Configurable {
             bulkProcessor = new BulkProcessorBulider().buildBulkProcessor(context, this);
         } else {
             logger.error("Could not create Rest client, No host exist");
+        }
+        String eventStartRegex = context.getString(ES_EVENT_PREFIX_REGEX);
+        if(!Strings.isNullOrEmpty(eventStartRegex)){
+            this.eventPrefixRegex = Pattern.compile(eventStartRegex);
+            logger.info("will check the line prefix as the event:" + eventStartRegex);
         }
     }
 
@@ -98,25 +114,59 @@ public class ElasticSearchSink extends AbstractSink implements Configurable {
             if (event != null) {
                 String body = new String(event.getBody(), Charsets.UTF_8);
                 if (!Strings.isNullOrEmpty(body)) {
-                    logger.debug("start to sink event [{}].", body);
-                    String index = indexBuilder.getIndex(event);
-                    String type = indexBuilder.getType(event);
-                    String id = indexBuilder.getId(event);
-                    XContentBuilder xContentBuilder = serializer.serialize(event);
-                    if (xContentBuilder != null) {
-                        if (!(Strings.isNullOrEmpty(id))) {
-                            bulkProcessor.add(new IndexRequest(index, type, id)
-                                    .source(xContentBuilder));
-                        } else {
-                            bulkProcessor.add(new IndexRequest(index, type)
-                                    .source(xContentBuilder));
+                    if(this.eventPrefixRegex != null) {
+                        //check the prefix is match
+                        JsonParser parser = new JsonParser();
+                        JsonElement element = parser.parse(body);
+                        JsonObject jsonObject = element.getAsJsonObject();
+                        String logStr = jsonObject.get("log").getAsString();
+
+                        Matcher matcher = this.eventPrefixRegex.matcher(logStr);
+                        if(matcher.find()) {
+                            //flush the pre event, if null don't do anything
+                            if(previousEvent != null) {
+                              //flush the pre event
+                                String preBody = new String(previousEvent.getBody(), Charsets.UTF_8);
+                                flushEvent(previousEvent, preBody);
+                                //如果内容没有上一条消息，直接写入ES，并且将previousEvent设置为null 以便后续设置为当前值
+                                previousEvent = null;
+                            } else {
+                                logger.debug("new event without previous event in memory, delay write when next event occur");
+                            }
+                            previousEvent = null;
+                        } else if( previousEvent != null){
+                            //append event
+                            String preBody = new String(previousEvent.getBody(), Charsets.UTF_8);
+                            logger.info(">>>append body to previous, previous:", preBody);
+                            if(!Strings.isNullOrEmpty(preBody)) {
+                                JsonParser preparser = new JsonParser();
+                                JsonElement preelement = preparser.parse(preBody);
+                                JsonObject prejsonObject = preelement.getAsJsonObject();
+                                String prelogStr = prejsonObject.get("log").getAsString();
+                                StringBuilder builder = new StringBuilder();
+                                builder.append(prelogStr);
+                                builder.append("\n");
+                                builder.append(logStr);
+
+                                prejsonObject.addProperty("log", builder.toString());
+
+                                String newBody = prejsonObject.toString();
+
+                                logger.info("<<<append body result:", newBody);
+                                previousEvent.setBody(newBody.getBytes());
+                            } else {
+                                logger.error("<<<previous event occur error:", previousEvent);
+                            }
+                        }
+                        if( previousEvent == null){
+                            previousEvent = new SimpleEvent();
+                            previousEvent.setHeaders(event.getHeaders());
+                            previousEvent.setBody(event.getBody());
                         }
                     } else {
-                        logger.error("Could not serialize the event body [{}] for index [{}], type[{}] and id [{}] ",
-                                new Object[]{body, index, type, id});
+                        flushEvent(event, body);
                     }
                 }
-                logger.debug("sink event [{}] successfully.", body);
             }
             txn.commit();
             return Status.READY;
@@ -131,6 +181,27 @@ public class ElasticSearchSink extends AbstractSink implements Configurable {
         } finally {
             txn.close();
         }
+    }
+
+    private void flushEvent(Event event, String body) {
+        logger.debug("start to sink event [{}].", body);
+        String index = indexBuilder.getIndex(event);
+        String type = indexBuilder.getType(event);
+        String id = indexBuilder.getId(event);
+        XContentBuilder xContentBuilder = serializer.serialize(event);
+        if (xContentBuilder != null) {
+            if (!(Strings.isNullOrEmpty(id))) {
+                bulkProcessor.add(new IndexRequest(index, type, id)
+                        .source(xContentBuilder));
+            } else {
+                bulkProcessor.add(new IndexRequest(index, type)
+                        .source(xContentBuilder));
+            }
+        } else {
+            logger.error("Could not serialize the event body [{}] for index [{}], type[{}] and id [{}] ",
+                    new Object[]{body, index, type, id});
+        }
+        logger.debug("sink event [{}] successfully.", body);
     }
 
     @Override
