@@ -29,9 +29,9 @@ public class StaticIndexBuilder implements IndexBuilder {
 
     private static final Logger logger = LoggerFactory.getLogger(StaticIndexBuilder.class);
 
-    private String index;
+    protected String index;
 
-    private String type;
+    protected String type;
 
     @Override
     public String getIndex(Event event) {
