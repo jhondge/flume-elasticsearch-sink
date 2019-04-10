@@ -117,8 +117,10 @@ public class NginxLogSerializer implements Serializer {
         String dateTimezone = context.getString(ES_NGINX_LOG_DATEFORMAT_TIMEZONE);
         if(dateFormat != null && dateFormat.length() > 0) {
             dateFormatter = new SimpleDateFormat(dateFormat);
+            logger.info("configure the dateformatter:{}, timezone:{}", dateFormat, dateTimezone);
             if(!Strings.isNullOrEmpty(dateTimezone)) {
                 TimeZone timeZone = TimeZone.getTimeZone(dateTimezone);
+                logger.info("configure the timezone convert:{}", timeZone);
                 if(timeZone != null) {
                     dateFormatter.setTimeZone(timeZone);
                 }

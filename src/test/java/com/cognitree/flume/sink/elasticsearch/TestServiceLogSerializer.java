@@ -70,7 +70,7 @@ public class TestServiceLogSerializer {
         context.put(ES_NGINX_LOG_FIELDS, type);
         context.put(ES_NGINX_LOG_REGEX, regex);
         context.put(ES_NGINX_LOG_DATEFORMAT, dateformat);
-        context.put(ES_NGINX_LOG_DATEFORMAT_TIMEZONE, "GMT");
+        context.put(ES_NGINX_LOG_DATEFORMAT_TIMEZONE, "GMT+8");
 
         nginxSerializer.configure(context);
 
@@ -85,9 +85,10 @@ public class TestServiceLogSerializer {
         XContentBuilder expected = jsonBuilder().startObject();
 
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
-        simpleDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+        simpleDateFormat.setTimeZone(TimeZone.getTimeZone("GMT+8"));
 
         Date date = simpleDateFormat.parse("2019-04-07 03:16:27.345");
+        System.out.println("timezone:" + simpleDateFormat.getTimeZone() + ", timestamp:" + date.getTime());
         expected.field("datetime", date);
         expected.field("thread_id", "http-nio-8088-exec-14");
         expected.field("log_level", "INFO");
