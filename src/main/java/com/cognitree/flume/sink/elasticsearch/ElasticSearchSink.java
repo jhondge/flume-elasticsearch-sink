@@ -97,7 +97,7 @@ public class ElasticSearchSink extends AbstractSink implements Configurable {
         String eventStartRegex = context.getString(ES_EVENT_PREFIX_REGEX);
         if(!Strings.isNullOrEmpty(eventStartRegex)){
             this.eventPrefixRegex = Pattern.compile(eventStartRegex);
-            logger.info("will check the line prefix as the event:" + eventStartRegex);
+            logger.info("will check the line prefix as the event:{}", eventStartRegex);
         }
     }
 
@@ -133,11 +133,10 @@ public class ElasticSearchSink extends AbstractSink implements Configurable {
                             } else {
                                 logger.debug("new event without previous event in memory, delay write when next event occur");
                             }
-                            previousEvent = null;
                         } else if( previousEvent != null){
                             //append event
                             String preBody = new String(previousEvent.getBody(), Charsets.UTF_8);
-                            logger.info(">>>append body to previous, previous:", preBody);
+                            logger.info(">>>append body to previous, previous:{}", preBody);
                             if(!Strings.isNullOrEmpty(preBody)) {
                                 JsonParser preparser = new JsonParser();
                                 JsonElement preelement = preparser.parse(preBody);
@@ -145,17 +144,16 @@ public class ElasticSearchSink extends AbstractSink implements Configurable {
                                 String prelogStr = prejsonObject.get("log").getAsString();
                                 StringBuilder builder = new StringBuilder();
                                 builder.append(prelogStr);
-                                builder.append("\n");
                                 builder.append(logStr);
 
                                 prejsonObject.addProperty("log", builder.toString());
 
                                 String newBody = prejsonObject.toString();
 
-                                logger.info("<<<append body result:", newBody);
+                                logger.info("<<<append body result:{}", newBody);
                                 previousEvent.setBody(newBody.getBytes());
                             } else {
-                                logger.error("<<<previous event occur error:", previousEvent);
+                                logger.error("<<<previous event occur error:{}", previousEvent);
                             }
                         }
                         if( previousEvent == null){
