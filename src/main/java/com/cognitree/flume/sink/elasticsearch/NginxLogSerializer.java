@@ -1,6 +1,7 @@
 package com.cognitree.flume.sink.elasticsearch;
 
 import com.google.common.base.Charsets;
+import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -17,6 +18,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -112,8 +114,15 @@ public class NginxLogSerializer implements Serializer {
         regex.matcher("").groupCount();
 
         String dateFormat = context.getString(ES_NGINX_LOG_DATEFORMAT);
+        String dateTimezone = context.getString(ES_NGINX_LOG_DATEFORMAT_TIMEZONE);
         if(dateFormat != null && dateFormat.length() > 0) {
             dateFormatter = new SimpleDateFormat(dateFormat);
+            if(!Strings.isNullOrEmpty(dateTimezone)) {
+                TimeZone timeZone = TimeZone.getTimeZone(dateTimezone);
+                if(timeZone != null) {
+                    dateFormatter.setTimeZone(timeZone);
+                }
+            }
         }
 
         try {

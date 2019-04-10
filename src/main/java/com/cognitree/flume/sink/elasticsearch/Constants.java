@@ -89,6 +89,8 @@ public class Constants {
 
     public static final String ES_NGINX_LOG_DATEFORMAT = "es.serializer.nginx.dateformat";
 
+    public static final String ES_NGINX_LOG_DATEFORMAT_TIMEZONE = "es.serializer.nginx.dateformat.timezone";
+
     public static final String ES_EVENT_PREFIX_REGEX = "es.event.prefix.regex";
 
     /**

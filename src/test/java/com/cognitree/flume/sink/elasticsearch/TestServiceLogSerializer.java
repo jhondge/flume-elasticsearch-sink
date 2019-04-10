@@ -29,6 +29,7 @@ import java.nio.charset.Charset;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.TimeZone;
 
 import static com.cognitree.flume.sink.elasticsearch.Constants.*;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
@@ -69,6 +70,7 @@ public class TestServiceLogSerializer {
         context.put(ES_NGINX_LOG_FIELDS, type);
         context.put(ES_NGINX_LOG_REGEX, regex);
         context.put(ES_NGINX_LOG_DATEFORMAT, dateformat);
+        context.put(ES_NGINX_LOG_DATEFORMAT_TIMEZONE, "GMT");
 
         nginxSerializer.configure(context);
 
@@ -82,7 +84,10 @@ public class TestServiceLogSerializer {
     private XContentBuilder generateContentBuilder() throws IOException, ParseException {
         XContentBuilder expected = jsonBuilder().startObject();
 
-        Date date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").parse("2019-04-07 03:16:27.345");
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+        simpleDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+
+        Date date = simpleDateFormat.parse("2019-04-07 03:16:27.345");
         expected.field("datetime", date);
         expected.field("thread_id", "http-nio-8088-exec-14");
         expected.field("log_level", "INFO");
