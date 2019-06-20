@@ -93,6 +93,8 @@ public class Constants {
 
     public static final String ES_EVENT_PREFIX_REGEX = "es.event.prefix.regex";
 
+    public static final String ES_ERROR_ROLLBACK = "es.error.rollback";
+
     /**
      * This enum is used for the time unit
      * <p>

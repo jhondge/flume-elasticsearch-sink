@@ -81,6 +81,8 @@ public class ElasticSearchSink extends AbstractSink implements Configurable {
 
     private Event previousEvent;
 
+    private boolean needRollback;
+
     @Override
     public void configure(Context context) {
         String[] hosts = getHosts(context);
@@ -99,6 +101,7 @@ public class ElasticSearchSink extends AbstractSink implements Configurable {
             this.eventPrefixRegex = Pattern.compile(eventStartRegex);
             logger.info("will check the line prefix as the event:{}", eventStartRegex);
         }
+        needRollback = context.getBoolean(ES_ERROR_ROLLBACK, false);
     }
 
     @Override
@@ -169,13 +172,23 @@ public class ElasticSearchSink extends AbstractSink implements Configurable {
             txn.commit();
             return Status.READY;
         } catch (Throwable tx) {
-            try {
-                txn.rollback();
-            } catch (Exception ex) {
-                logger.error("exception in rollback.", ex);
+            logger.error("handle the event error:", tx);
+            if(needRollback) {
+                try {
+                    txn.rollback();
+                } catch (Exception ex) {
+                    logger.error("exception in rollback.", ex);
+                }
+                logger.error("transaction rolled back.", tx);
+                return Status.BACKOFF;
+            } else {
+                try{
+                    txn.commit();
+                }catch (Exception ex){
+                    logger.error("handle the error event commit trans error:", ex);
+                }
+                return Status.READY;
             }
-            logger.error("transaction rolled back.", tx);
-            return Status.BACKOFF;
         } finally {
             txn.close();
         }
